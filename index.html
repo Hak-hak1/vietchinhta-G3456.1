@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Game: Everyday English</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* New Modern Mint theme */
+            --primary-color: #1abc9c; /* Mint Green */
+            --primary-dark: #16a085;
+            --accent-color: #f39c12; /* Orange */
+            --background-color: #ecf0f1; /* Light Gray */
+            --container-bg: #ffffff;
+            --text-color: #34495e; /* Dark Blue-Gray */
+            --light-text: #95a5a6;
+            --success-color: #27ae60;
+            --error-color: #c0392b;
+            --border-color: #bdc3c7;
+            --light-bg-highlight: #e8f8f5;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            overflow-x: hidden;
+            color: var(--text-color);
+        }
+        #effect-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #game-container {
+            text-align: center;
+            background: var(--container-bg);
+            padding: 25px 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 680px;
+            position: relative;
+            border: 1px solid #e0e0e0;
+            z-index: 1;
+        }
+        h1 {
+            font-size: clamp(26px, 5.5vw, 36px);
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        p {
+            font-size: clamp(16px, 4.2vw, 18px);
+            line-height: 1.6;
+            margin-top: 0;
+        }
+        #vietnamese-translation {
+            font-size: clamp(18px, 5vw, 22px);
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin: 20px 0 10px 0;
+            padding: 10px 15px;
+            background-color: var(--light-bg-highlight);
+            border-radius: 12px;
+            min-height: 30px;
+        }
+        input[type="text"] {
+            padding: 14px 20px;
+            font-size: clamp(16px, 4.5vw, 18px);
+            width: 100%;
+            max-width: 500px;
+            margin: 20px 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            background-color: #fff;
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(26, 188, 156, 0.3);
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: clamp(15px, 4.2vw, 17px);
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(22, 160, 133, 0.2);
+        }
+        button.accent {
+            background-color: var(--accent-color);
+        }
+        button.accent:hover:not(:disabled) {
+            background-color: #d35400;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.2);
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #hint {
+            color: var(--light-text);
+            font-style: italic;
+            margin-top: 15px;
+            font-size: clamp(14px, 3.8vw, 16px);
+            user-select: none;
+            line-height: 1.5;
+            min-height: 22px;
+        }
+        #completion, #result {
+            font-size: clamp(16px, 4.2vw, 19px);
+            font-weight: 600;
+            margin-top: 15px;
+            min-height: 27px;
+        }
+        .particle { position: absolute; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 16px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { color: var(--primary-color); }
+        .modal-content ul { list-style: none; padding: 0; }
+        .modal-content li { background: var(--light-bg-highlight); border-radius: 8px; padding: 10px; margin-bottom: 10px; text-align: left; }
+        .modal-content li strong { color: var(--primary-dark); }
+        .close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="effect-container"></div>
+    <div id="game-container">
+        <h1>Welcome to Spelling Master!</h1>
+        <p>Please enter your name to start.</p>
+        <input type="text" id="playerNameInput" placeholder="Your Name">
+        <button onclick="submitName()">Start Game</button>
+    </div>
+
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeReviewModal()">&times;</span>
+            <h2>Review Your Mistakes</h2>
+            <ul id="mistakeList"></ul>
+        </div>
+    </div>
+
+    <script>
+        const sentences = [
+            { en: "This gift is for you.", vi: "Món quà này dành cho bạn." },
+            { en: "Thank you very much!", vi: "Cảm ơn bạn nhiều." },
+            { en: "That book is for Nam.", vi: "Cuốn sách đó dành cho Nam." },
+            { en: "I will give it to him.", vi: "Mình sẽ đưa cho bạn ấy." },
+            { en: "These flowers are for you.", vi: "Những bông hoa này dành cho bạn." },
+            { en: "They’re beautiful! Thanks.", vi: "Hoa đẹp quá! Cảm ơn nhé." },
+            { en: "Those toys are for the children.", vi: "Những món đồ chơi đó dành cho bọn trẻ." },
+            { en: "They will love them.", vi: "Chúng sẽ thích lắm." },
+            { en: "Here is a card for you.", vi: "Đây là tấm thiệp dành cho bạn." },
+            { en: "It’s so nice.", vi: "Nó thật đẹp." },
+            { en: "Here are some candies for you.", vi: "Đây là vài viên kẹo cho bạn." },
+            { en: "I love candies! Thanks.", vi: "Mình thích kẹo lắm! Cảm ơn." },
+            { en: "Let’s buy a birthday cake for her.", vi: "Hãy mua bánh sinh nhật cho cô ấy." },
+            { en: "Good idea!", vi: "Ý hay đấy!" },
+            { en: "Let’s buy some flowers for Teacher’s Day.", vi: "Hãy mua hoa cho Ngày Nhà giáo." },
+            { en: "Yes, she will be happy.", vi: "Vâng, cô sẽ vui lắm." },
+            { en: "Who is that man?", vi: "Người đàn ông đó là ai?" },
+            { en: "He’s my father.", vi: "Ông ấy là bố mình." },
+            { en: "Who is the woman in the red dress?", vi: "Người phụ nữ mặc váy đỏ là ai?" },
+            { en: "She’s my aunt.", vi: "Đó là dì của mình." },
+            { en: "Who do you live with?", vi: "Bạn sống với ai?" },
+            { en: "I live with my parents.", vi: "Mình sống với bố mẹ." },
+            { en: "Who does he go to school with?", vi: "Anh ấy đi học với ai?" },
+            { en: "He goes with his friends.", vi: "Anh ấy đi cùng bạn." },
+            { en: "Who can answer the question?", vi: "Ai có thể trả lời câu hỏi?" },
+            { en: "I can answer it.", vi: "Mình có thể trả lời." },
+            { en: "Who can help me?", vi: "Ai có thể giúp mình?" },
+            { en: "I can help you.", vi: "Mình có thể giúp bạn." },
+            { en: "What’s this?", vi: "Đây là cái gì?" },
+            { en: "It’s a pen.", vi: "Đây là cái bút." },
+            { en: "What’s that?", vi: "Kia là cái gì?" },
+            { en: "It’s a ruler.", vi: "Kia là cây thước." },
+            { en: "What are these?", vi: "Đây là những gì?" },
+            { en: "They’re books.", vi: "Đây là những quyển sách." },
+            { en: "What are those?", vi: "Kia là những gì?" },
+            { en: "They’re chairs.", vi: "Kia là những cái ghế." },
+            { en: "What is it?", vi: "Nó là cái gì?" },
+            { en: "It’s an eraser.", vi: "Nó là cục tẩy." },
+            { en: "What are they?", vi: "Chúng là gì?" },
+            { en: "They’re pencils.", vi: "Chúng là bút chì." },
+            { en: "What’s your name?", vi: "Tên bạn là gì?" },
+            { en: "My name is Hoa.", vi: "Tên mình là Hoa." },
+            { en: "What’s his name?", vi: "Tên anh ấy là gì?" },
+            { en: "His name is Nam.", vi: "Tên anh ấy là Nam." },
+            { en: "What’s her name?", vi: "Tên cô ấy là gì?" },
+            { en: "Her name is Mai.", vi: "Tên cô ấy là Mai." },
+            { en: "What’s the name of your school?", vi: "Trường của bạn tên gì?" },
+            { en: "It’s Le Loi Primary School.", vi: "Đó là Trường Tiểu học Lê Lợi." },
+            { en: "What’s the name of that street?", vi: "Con đường đó tên gì?" },
+            { en: "It’s Nguyen Trai Street.", vi: "Nó là đường Nguyễn Trãi." },
+            { en: "What do you do?", vi: "Bạn làm nghề gì?" },
+            { en: "I’m a student.", vi: "Mình là học sinh." },
+            { en: "What does he do?", vi: "Anh ấy làm nghề gì?" },
+            { en: "He’s a teacher.", vi: "Anh ấy là giáo viên." },
+            { en: "What does she do?", vi: "Cô ấy làm nghề gì?" },
+            { en: "She’s a nurse.", vi: "Cô ấy là y tá." },
+            { en: "What’s your job?", vi: "Nghề của bạn là gì?" },
+            { en: "I’m a farmer.", vi: "Mình là nông dân." },
+            { en: "What’s your father’s job?", vi: "Nghề của bố bạn là gì?" },
+            { en: "He’s an engineer.", vi: "Ông ấy là kỹ sư." },
+            { en: "What’s your mother’s job?", vi: "Nghề của mẹ bạn là gì?" },
+            { en: "She’s a doctor.", vi: "Mẹ mình là bác sĩ." },
+            { en: "What’s your hobby?", vi: "Sở thích của bạn là gì?" },
+            { en: "I like reading.", vi: "Mình thích đọc sách." },
+            { en: "What’s his hobby?", vi: "Sở thích của anh ấy là gì?" },
+            { en: "He likes swimming.", vi: "Anh ấy thích bơi." },
+            { en: "What’s her hobby?", vi: "Sở thích của cô ấy là gì?" },
+            { en: "She likes dancing.", vi: "Cô ấy thích nhảy." },
+            { en: "What’s your favourite colour?", vi: "Màu yêu thích của bạn là gì?" },
+            { en: "My favourite colour is blue.", vi: "Màu yêu thích của mình là xanh dương." },
+            { en: "What’s your favourite subject?", vi: "Môn học yêu thích của bạn là gì?" },
+            { en: "I like English.", vi: "Mình thích tiếng Anh." },
+            { en: "What’s your favourite food?", vi: "Món ăn yêu thích của bạn là gì?" },
+            { en: "My favourite food is noodles.", vi: "Món yêu thích của mình là mì." },
+            { en: "What do you like best?", vi: "Bạn thích gì nhất?" },
+            { en: "I like English best.", vi: "Mình thích tiếng Anh nhất." },
+            { en: "What do you like the most?", vi: "Bạn thích nhất điều gì?" },
+            { en: "I like summer the most.", vi: "Mình thích mùa hè nhất." },
+            { en: "What do you like?", vi: "Bạn thích gì?" },
+            { en: "I like music.", vi: "Mình thích âm nhạc." }
+        ];
+        let playerName = '';
+        let incorrectAnswers = [];
+        let currentSentenceIndex = 0;
+        let completedCount = 0;
+        let isPlaying = false;
+        let autoPlayInterval;
+        let wrongAttempts = 0;
+        const TOTAL_SENTENCES = sentences.length;
+
+        function showCelebrationEffect() {
+            const launchWave = (delay) => {
+                setTimeout(() => {
+                    const container = document.getElementById('effect-container');
+                    const confettiCount = 50;
+                    const colors = ['#1abc9c', '#f39c12', '#2ecc71', '#FFFFFF'];
+                    for (let i = 0; i < confettiCount; i++) createConfetti(container, colors);
+                }, delay);
+            };
+            launchWave(0);
+            launchWave(400);
+            launchWave(800);
+        }
+
+        function createConfetti(container, colors) {
+            const confetti = document.createElement('div');
+            confetti.className = 'particle';
+            container.appendChild(confetti);
+            const size = Math.random() * 8 + 4;
+            const xPos = Math.random() * 100;
+            confetti.style.width = `${size}px`;
+            confetti.style.height = `${size * 1.5}px`;
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.left = `${xPos}vw`;
+            confetti.style.top = '-20px';
+            const fallDuration = Math.random() * 2000 + 3000;
+            const horizontalDrift = (Math.random() - 0.5) * 200;
+            const rotation = Math.random() * 720 - 360;
+            const animation = confetti.animate([
+                { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+                { transform: `translate(${horizontalDrift}px, ${window.innerHeight + 20}px) rotate(${rotation}deg)`, opacity: 0 }
+            ], { duration: fallDuration, easing: 'ease-in-out' });
+            animation.onfinish = () => confetti.remove();
+        }
+
+        function playSentence() {
+            if (!isPlaying && sentences[currentSentenceIndex]) {
+                isPlaying = true;
+                const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex].en);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                utterance.onend = () => { isPlaying = false; };
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function startAutoPlay() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+            autoPlayInterval = setInterval(() => { if (!isPlaying) playSentence(); }, 5000);
+        }
+
+        function stopAutoPlay() {
+            if (autoPlayInterval) clearInterval(autoPlayInterval);
+        }
+
+        function checkAnswer() {
+            const checkBtn = document.getElementById('checkBtn');
+            if (checkBtn.disabled) return;
+            const userInput = document.getElementById('userInput').value.trim();
+            const result = document.getElementById('result');
+            const currentSentence = sentences[currentSentenceIndex];
+            const normalizeApostrophes = (str) => str.replace(/[’‘`]/g, "'");
+
+            if (normalizeApostrophes(userInput) === normalizeApostrophes(currentSentence.en)) {
+                stopAutoPlay();
+                checkBtn.disabled = true;
+                document.getElementById('hintBtn').disabled = true;
+                document.getElementById('playSoundBtn').disabled = true;
+                result.textContent = "Correct!";
+                result.className = 'correct';
+                showCelebrationEffect();
+                if (wrongAttempts < 2) {
+                    completedCount++;
+                    document.getElementById('completion').textContent = `Score: ${completedCount}/${TOTAL_SENTENCES}`;
+                }
+                wrongAttempts = 0;
+                setTimeout(() => {
+                    currentSentenceIndex++;
+                    if (currentSentenceIndex >= TOTAL_SENTENCES) {
+                        let reviewButtonHTML = '';
+                        if (incorrectAnswers.length > 0) {
+                            reviewButtonHTML = `<button class="accent" onclick="showReviewModal()">Xem lại lỗi sai</button>`;
+                        }
+                        document.getElementById('game-container').innerHTML = `<h1>Congratulations, ${playerName}!</h1><p>You scored ${completedCount} out of ${TOTAL_SENTENCES}!</p><div class="button-group"><button onclick="resetGame()">Play Again</button>${reviewButtonHTML}</div>`;
+                    } else {
+                        updateGameScreen();
+                        playSentence();
+                        startAutoPlay();
+                    }
+                }, 2000);
+            } else {
+                wrongAttempts++;
+                result.textContent = `Incorrect, try again! (${3 - wrongAttempts} left)`;
+                result.className = 'incorrect';
+                if (wrongAttempts >= 3) {
+                    stopAutoPlay();
+                    checkBtn.disabled = true;
+                    document.getElementById('hintBtn').disabled = true;
+                    document.getElementById('playSoundBtn').disabled = true;
+                    if (!incorrectAnswers.some(item => item.en === currentSentence.en)) {
+                        incorrectAnswers.push(currentSentence);
+                    }
+                    wrongAttempts = 0;
+                    result.textContent = "Moving to the next sentence...";
+                    setTimeout(() => {
+                        currentSentenceIndex++;
+                        if (currentSentenceIndex >= TOTAL_SENTENCES) {
+                             let reviewButtonHTML = '';
+                            if (incorrectAnswers.length > 0) {
+                                reviewButtonHTML = `<button class="accent" onclick="showReviewModal()">Xem lại lỗi sai</button>`;
+                            }
+                            document.getElementById('game-container').innerHTML = `<h1>Game Over, ${playerName}!</h1><p>You scored ${completedCount} out of ${TOTAL_SENTENCES}.</p><div class="button-group"><button onclick="resetGame()">Play Again</button>${reviewButtonHTML}</div>`;
+                        } else {
+                            updateGameScreen();
+                            playSentence();
+                            startAutoPlay();
+                        }
+                    }, 2000);
+                }
+            }
+        }
+
+        function updateGameScreen() {
+            if (document.getElementById('userInput')) {
+                const currentData = sentences[currentSentenceIndex];
+                document.getElementById('userInput').value = '';
+                document.getElementById('vietnamese-translation').textContent = currentData.vi;
+                document.getElementById('hint').textContent = '';
+                document.getElementById('result').textContent = '';
+                document.getElementById('completion').textContent = `Score: ${completedCount}/${TOTAL_SENTENCES}`;
+                const checkBtn = document.getElementById('checkBtn');
+                if (checkBtn) checkBtn.disabled = false;
+                const hintBtn = document.getElementById('hintBtn');
+                if (hintBtn) hintBtn.disabled = false;
+                const playSoundBtn = document.getElementById('playSoundBtn');
+                if (playSoundBtn) playSoundBtn.disabled = false;
+            }
+        }
+
+        function showHint() {
+            document.getElementById('hint').innerHTML = `Hint: ${sentences[currentSentenceIndex].en}`;
+        }
+        
+        function clearHint() {
+            const hintEl = document.getElementById('hint');
+            if(hintEl) {
+                hintEl.innerHTML = '';
+            }
+        }
+
+        function submitName() {
+            const nameInput = document.getElementById('playerNameInput');
+            playerName = nameInput.value.trim();
+            if (playerName) {
+                startGame();
+            } else {
+                alert("Please enter your name!");
+            }
+        }
+
+        function startGame() {
+            wrongAttempts = 0;
+            currentSentenceIndex = 0;
+            completedCount = 0;
+            incorrectAnswers = [];
+            const currentData = sentences[currentSentenceIndex];
+            document.getElementById('game-container').innerHTML = `
+                <h1>Everyday English</h1>
+                <p>Listen and type what you hear.<span class="instruction-vi">Hãy lắng nghe và gõ lại câu bạn nghe được.</span></p>
+                <p id="vietnamese-translation">${currentData.vi}</p>
+                <input type="text" id="userInput" placeholder="Type the sentence here...">
+                <div class="button-group">
+                    <button id="playSoundBtn" onclick="playSentence()">&#9658; Play Sound</button>
+                    <button id="checkBtn" onclick="checkAnswer()">Check</button>
+                    <button id="hintBtn" onclick="showHint()">Hint</button>
+                    <button onclick="resetGame()">Reset Game</button>
+                </div>
+                <p id="completion">Score: ${completedCount}/${TOTAL_SENTENCES}</p>
+                <p id="hint"></p>
+                <p id="result"></p>
+            `;
+            const userInputEl = document.getElementById('userInput');
+            userInputEl.addEventListener('keypress', handleKeyPress);
+            userInputEl.addEventListener('focus', clearHint);
+            playSentence();
+            startAutoPlay();
+        }
+
+        function resetGame() {
+            stopAutoPlay();
+            speechSynthesis.cancel();
+            document.getElementById('game-container').innerHTML = `
+                <h1>Welcome to Spelling Master!</h1>
+                <p>Please enter your name to start.</p>
+                <input type="text" id="playerNameInput" placeholder="Your Name" value="${playerName}">
+                <button onclick="submitName()">Start Game</button>
+            `;
+        }
+        
+        function showReviewModal() {
+            const modal = document.getElementById('reviewModal');
+            const list = document.getElementById('mistakeList');
+            list.innerHTML = '';
+            incorrectAnswers.forEach(item => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<strong>Correct:</strong> ${item.en}<br><em>${item.vi}</em>`;
+                list.appendChild(listItem);
+            });
+            modal.style.display = 'flex';
+        }
+
+        function closeReviewModal() {
+            document.getElementById('reviewModal').style.display = 'none';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); 
+                checkAnswer();
+            }
+        }
+    </script>
+</body>
+</html>
